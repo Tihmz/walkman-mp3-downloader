@@ -1,9 +1,12 @@
+#!/usr/bin/python3
 import requests
 import urllib.parse
 import urllib.request
 import youtube_dl
 import sys
 import html
+import ffmpy
+import os
 
 def spotify_playlist_parser(url):
 
@@ -61,7 +64,7 @@ def yt_parser(video_links):
 
         r = requests.get("https://www.youtube.com/results?search_query=" + video["encoded_link"])
         response = r.text
-        video_url = url_dl + response[response.index("/watch?v=")+9:response.index("/watch?v=")+20]
+        video_url = "https://www.youtube.com" + response[response.index("/watch?v="):response.index("/watch?v=")+20]
         video["video_url"] = video_url
         video_list.append(video)
 
@@ -85,7 +88,6 @@ def yt_playlist_parser(url):
         i = page.find("/watch?v=")
 
     url_list = list(set(url_list))
-    print(url_list)
     return url_list
 
 def yt_getVideoInfo(video_links):
@@ -120,15 +122,43 @@ def yt_downloader(video_list):
 
     for video in video_list :
 
-        filename = "{} by {}.mp3".format(video["title"],video["artist"])
-        options={
-            'format':'bestaudio/best',
-            'keepvideo':False,
-            'outtmpl':filename,
-        }
-        print("Downloading",filename)
-        ydl = youtube_dl.YoutubeDL(options)
-        ydl.download([video["video_url"]])
+        l = [" ", "\"", "\'","|",":"]
+        if video["title"].find(video["artist"]) != -1 or video["title"].find(" by ") != -1:
+            s = video["title"]+".mp3"
+        else:
+            s = "{} by {}.mp3".format(video["title"],video["artist"])
+        filename = ""
+        for i in s:
+            if i in l:
+                filename+="_"
+            else:
+                filename+=i
+
+        if os.path.exists(filename):
+            print("%s already exist" % filename)
+
+        else:
+            options = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl':"temp.mp3",
+            }
+
+            print("[Downloading",filename,"]")
+            ydl = youtube_dl.YoutubeDL(options)
+            ydl.download([video["video_url"]])
+
+            ff = ffmpy.FFmpeg(
+            inputs={'temp.mp3': None},
+            outputs={filename: None}
+            )
+            ff.run()
+            print("[Removing temporary file]")
+            os.remove("temp.mp3")
 
 def main():
 
@@ -165,13 +195,14 @@ def main():
                 print("youtube video detected")
                 download_list = yt_getVideoInfo([link])
 
+    elif link.find("youtu.be") != -1:
+        print("youtu.be video detected")
+        download_list = yt_getVideoInfo([link])
+
     else:
         print("nothing detected")
 
-
-    for i in download_list:
-        print(i["title"] + " by " + i["artist"] + " : " + i["video_url"])
-    # yt_downloader(download_list)
+    yt_downloader(download_list)
 
 if __name__ == "__main__":
     try:    
