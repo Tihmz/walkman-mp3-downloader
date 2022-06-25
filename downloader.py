@@ -8,10 +8,26 @@ import html
 import ffmpy
 import os
 
+def clean_filename(inp):
+    l = [" ", "\"", "\'","|",":"]
+    filename = ""
+    for i in inp:
+        if i in l:
+            filename+="_"
+        else:
+            filename+=i
+
+    return filename
+
 def spotify_playlist_parser(url):
 
     r = requests.get(url)
-    page = r.text
+    page = html.unescape(r.text)
+
+    i1 = page.index("<title>")
+    i2 = page.index("Spotify</title>")
+    title = page[i1+7:i2]
+    title = title[:title.index(" - playlist by")]
 
     i = page.find("https://open.spotify.com/track/")
 
@@ -25,9 +41,9 @@ def spotify_playlist_parser(url):
         i = page.find("https://open.spotify.com/track/")
 
     url_list = list(set(url_list))
-    return url_list
+    return url_list, title
 
-def spotify_song_parser(url_list):
+def spotify_song_parser(url_list,directory=None):
 
     song_list = []
     c = 0
@@ -49,6 +65,9 @@ def spotify_song_parser(url_list):
 
         song["encoded_link"] = query_encoded
         song_list.append(song)
+
+        if directory != None:
+            song["directory"]=directory
 
         c+=1
         p = 100*c/int(len(url_list))
@@ -77,6 +96,10 @@ def yt_playlist_parser(url):
     r = urllib.request.urlopen(url)
     page = r.read().decode()
 
+    i1 = page.index("<title>")
+    i2 = page.index(" - YouTube</title>")
+    title = page[i1+7:i2]
+
     i = page.find("/watch?v=")
     url_list = []
     
@@ -88,9 +111,9 @@ def yt_playlist_parser(url):
         i = page.find("/watch?v=")
 
     url_list = list(set(url_list))
-    return url_list
+    return url_list,title
 
-def yt_getVideoInfo(video_links):
+def yt_getVideoInfo(video_links,directory=None):
     
     video_list = []
 
@@ -113,6 +136,9 @@ def yt_getVideoInfo(video_links):
             "video_url":url
         }
 
+        if directory != None:
+            video["directory"]=directory
+
         video_list.append(video)
 
     return video_list
@@ -120,19 +146,23 @@ def yt_getVideoInfo(video_links):
 
 def yt_downloader(video_list):
 
-    for video in video_list :
+    directory = video_list[1]["directory"] 
+    if directory != None:
+        print("creating folder for playlist",directory)
+        directory=clean_filename(directory)
+        os.mkdir(directory)
 
-        l = [" ", "\"", "\'","|",":"]
+    for video in video_list :
+        
         if video["title"].find(video["artist"]) != -1 or video["title"].find(" by ") != -1:
             s = video["title"]+".mp3"
         else:
             s = "{} by {}.mp3".format(video["title"],video["artist"])
-        filename = ""
-        for i in s:
-            if i in l:
-                filename+="_"
-            else:
-                filename+=i
+
+        filename=clean_filename(s)
+
+        if directory != None:
+            filename = directory + "/" + filename
 
         if os.path.exists(filename):
             print("%s already exist" % filename)
@@ -176,8 +206,8 @@ def main():
 
         if link.find("playlist") != -1:
             print("spotify playlist detected")
-            url_list = spotify_playlist_parser(link)
-            video_list = spotify_song_parser(url_list)
+            url_list, title = spotify_playlist_parser(link)
+            video_list = spotify_song_parser(url_list,title)
 
         elif link.find("track") != -1:
             print("spotify track detected")
@@ -188,8 +218,8 @@ def main():
     elif link.find("youtube") != -1:
             if link.find("playlist") != -1:
                 print("youtube playlist detected")
-                url_list = yt_playlist_parser(link)
-                download_list = yt_getVideoInfo(url_list)
+                url_list, title = yt_playlist_parser(link)
+                download_list = yt_getVideoInfo(url_list,title)
 
             elif link.find("/watch?v=") != -1 :
                 print("youtube video detected")
@@ -202,6 +232,8 @@ def main():
     else:
         print("nothing detected")
 
+    # for i in download_list:
+    #     print(i)
     yt_downloader(download_list)
 
 if __name__ == "__main__":
