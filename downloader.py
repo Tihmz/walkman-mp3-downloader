@@ -9,7 +9,8 @@ import ffmpy
 import os
 
 def clean_filename(inp):
-    l = [" ", "\"", "\'","|",":"]
+    l = [" ", "\"", "\'","|",":",",","/"]
+    # todo, make a list and then "for i not in l" for a better filter
     filename = ""
     for i in inp:
         if i in l:
@@ -32,7 +33,7 @@ def spotify_playlist_parser(url):
     i = page.find("https://open.spotify.com/track/")
 
     url_list = []
-    
+
     while i != -1:
 
         url = page[i:i+53]
@@ -51,7 +52,7 @@ def spotify_song_parser(url_list,directory=None):
     for url in url_list:
 
         r = requests.get(url)
-        
+
         i1 = r.text.index("<title>")
         i2 = r.text.index("</title")
         description = html.unescape(r.text[i1+7:i2])
@@ -145,12 +146,15 @@ def yt_getVideoInfo(video_links,directory=None):
 
 
 def yt_downloader(video_list):
-
-    directory = video_list[1]["directory"] 
-    if directory != None:
-        print("creating folder for playlist",directory)
-        directory=clean_filename(directory)
-        os.mkdir(directory)
+    
+    if "directory" in video_list[0]:
+        directory = video_list[0]["directory"]
+        directory = clean_filename(directory)
+        if os.path.exists(directory):
+            print("Directory % already exist" % directory)
+        else:
+            print("Creating folder for playlist",directory)
+            os.mkdir(directory)
 
     for video in video_list :
         
@@ -161,8 +165,8 @@ def yt_downloader(video_list):
 
         filename=clean_filename(s)
 
-        if directory != None:
-            filename = directory + "/" + filename
+        if "directory" in video:
+            filename = video["directory"] + "/" + filename
 
         if os.path.exists(filename):
             print("%s already exist" % filename)
