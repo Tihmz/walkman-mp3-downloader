@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from os.path import exists
 import requests
 import urllib.parse
 import urllib.request
@@ -8,24 +7,16 @@ import sys
 import html
 import ffmpy
 import os
-import re
-
-Music_folder = "/home/tihmz/Music/"
 
 def clean_filename(inp):
-    regex = re.compile("[#<>%*&{}/\\\\$ +!`\"\'|=@]")
+    l = [" ", "\"", "\'","|",":",",","/"]
+    # todo, make a list and then "for i not in l" for a better filter
     filename = ""
-    long_empty = False
     for i in inp:
-        if not regex.findall(i):
-            filename += i
-            long_empty = False
+        if i in l:
+            filename+="_"
         else:
-            if not long_empty:
-                filename += "_"
-                long_empty = True
-            else:
-                pass
+            filename+=i
 
     return filename
 
@@ -86,7 +77,7 @@ def spotify_song_parser(url_list,directory=None):
     return song_list
 
 def yt_parser(video_links):
-
+    
     video_list = []
 
     for video in video_links:
@@ -97,7 +88,7 @@ def yt_parser(video_links):
         video["video_url"] = video_url
         video_list.append(video)
 
-    return video_list
+    return video_list 
 
 def yt_playlist_parser(url):
 
@@ -112,7 +103,7 @@ def yt_playlist_parser(url):
 
     i = page.find("/watch?v=")
     url_list = []
-
+    
     while i != -1:
 
         url = page[i:i+20]
@@ -124,7 +115,7 @@ def yt_playlist_parser(url):
     return url_list,title
 
 def yt_getVideoInfo(video_links,directory=None):
-
+    
     video_list = []
 
     for url in video_links :
@@ -155,18 +146,18 @@ def yt_getVideoInfo(video_links,directory=None):
 
 
 def yt_downloader(video_list):
-
+    
     if "directory" in video_list[0]:
         directory = video_list[0]["directory"]
         directory = clean_filename(directory)
-        if os.path.exists( Music_folder + directory):
+        if os.path.exists(directory):
             print("Directory % already exist" % directory)
         else:
             print("Creating folder for playlist",directory)
-            os.mkdir(Music_folder + directory)
+            os.mkdir(directory)
 
     for video in video_list :
-
+        
         if video["title"].find(video["artist"]) != -1 or video["title"].find(" by ") != -1:
             s = video["title"]+".mp3"
         else:
@@ -175,7 +166,7 @@ def yt_downloader(video_list):
         filename=clean_filename(s)
 
         if "directory" in video:
-            filename =Music_folder + video["directory"] + "/" + filename
+            filename = video["directory"] + "/" + filename
 
         if os.path.exists(filename):
             print("%s already exist" % filename)
@@ -214,7 +205,7 @@ def main():
 
     else:
         link = str(sys.argv[1])
-
+    
     if link.find("spotify") != -1:
 
         if link.find("playlist") != -1:
@@ -250,11 +241,7 @@ def main():
     yt_downloader(download_list)
 
 if __name__ == "__main__":
-    try:
+    try:    
         main()
     except KeyboardInterrupt:
-        print("aborting, cleaning temporay files...")
-        if exists("temp.mp3"):
-            os.remove("temp.mp3")
-        if exists("temp.html"):
-            os.remove("temp.html")
+        print("aborting")
