@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import requests
 import urllib.parse
 import urllib.request
@@ -6,63 +5,43 @@ import youtube_dl
 import html
 import ffmpy
 import os
+import re
+
 import main as Main
 
-def spotify_playlist_parser(url):
+def run(link):
+    if link.find("youtube") != -1 and link.find("playlist") != -1:
+        print("youtube playlist detected")
+        url_list, title = yt_playlist_parser(link)
+        download_list = yt_getVideoInfo(url_list,title)
 
-    r = requests.get(url)
-    page = html.unescape(r.text)
+    elif link.find("youtube") != -1 and link.find("/watch?v=") != -1 :
+        print("youtube video detected")
+        download_list = yt_getVideoInfo([link])
 
-    i1 = page.index("<title>")
-    i2 = page.index("Spotify</title>")
-    title = page[i1+7:i2]
-    title = title[:title.index(" - playlist by")]
+    elif link.find("youtu.be") != -1:
+        print("youtu.be video detected")
+        download_list = yt_getVideoInfo([link])
 
-    i = page.find("https://open.spotify.com/track/")
+    return download_list
 
-    url_list = []
+def clean_filename(inp):
+    regex = re.compile("[#<>%*&{}/\\\\$ +!`\"\'|=@]")
+    filename = ""
+    long_empty = False
+    for i in inp:
+        if not regex.findall(i):
+            filename += i
+            long_empty = False
+        else:
+            if not long_empty:
+                filename += "_"
+                long_empty = True
+            else:
+                pass
 
-    while i != -1:
+    return filename
 
-        url = page[i:i+53]
-        url_list.append(url)
-        page=page[i+53:]
-        i = page.find("https://open.spotify.com/track/")
-
-    url_list = list(set(url_list))
-    return url_list, title
-
-def spotify_song_parser(url_list,directory=None):
-
-    song_list = []
-    c = 0
-
-    for url in url_list:
-
-        r = requests.get(url)
-
-        i1 = r.text.index("<title>")
-        i2 = r.text.index("</title")
-        description = html.unescape(r.text[i1+7:i2])
-
-        song = {
-            "title": description[:description.index(" - song by")],
-            "artist": description[description.index("song by")+8:description.index(" | Spotify")]
-        }
-
-        query_encoded = urllib.parse.quote(song["title"]+" "+song["artist"])
-
-        song["encoded_link"] = query_encoded
-        song_list.append(song)
-
-        if directory != None:
-            song["directory"]=directory
-
-        c+=1
-        p = 100*c/int(len(url_list))
-        print(str(p)+"%")
-
-    return song_list
 
 def yt_parser(video_links):
 
@@ -136,7 +115,7 @@ def yt_downloader(video_list):
 
     if "directory" in video_list[0]:
         directory = video_list[0]["directory"]
-        directory = Main.clean_filename(directory)
+        directory = clean_filename(directory)
         if os.path.exists( Main.MUSIC_FOLDER + directory):
             print("Directory %s already exist" % directory)
         else:
@@ -150,10 +129,10 @@ def yt_downloader(video_list):
         else:
             filename = "{} by {}.mp3".format(video["title"],video["artist"])
 
-        filename = Main.clean_filename(filename)
+        filename = clean_filename(filename)
 
         if "directory" in video:
-            filename = Main.MUSIC_FOLDER + video["directory"] + "/" + filename
+            filename = Main.MUSIC_FOLDER + directory + "/" + filename
 
         if os.path.exists(filename):
             print("%s already exist" % filename)
