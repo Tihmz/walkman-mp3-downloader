@@ -116,7 +116,7 @@ def yt_downloader(video_list):
     if "directory" in video_list[0]:
         directory = video_list[0]["directory"]
         directory = clean_filename(directory)
-        if os.path.exists( Main.MUSIC_FOLDER + directory):
+        if os.path.exists(Main.MUSIC_FOLDER + directory):
             print("Directory %s already exist" % directory)
         else:
             print("Creating folder for playlist",directory)
@@ -133,6 +133,10 @@ def yt_downloader(video_list):
 
         if "directory" in video:
             filename = Main.MUSIC_FOLDER + directory + "/" + filename
+        else:
+            if not os.path.exists(Main.MUSIC_FOLDER + "/Downloader/"):
+                os.mkdir(Main.MUSIC_FOLDER + "/Downloader/")
+            filename = Main.MUSIC_FOLDER + "/Downloader/" + filename
 
         if os.path.exists(filename):
             print("%s already exist" % filename)

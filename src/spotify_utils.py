@@ -44,7 +44,6 @@ def spotify_playlist_parser(url):
 def spotify_song_parser(url_list,directory=None):
 
     song_list = []
-    c = 0
 
     for url in url_list:
 
@@ -55,8 +54,8 @@ def spotify_song_parser(url_list,directory=None):
         description = html.unescape(r.text[i1+7:i2])
 
         song = {
-            "title": description[:description.index(" - song by")],
-            "artist": description[description.index("song by")+8:description.index(" | Spotify")]
+            "title": description[:description.index(" - song and lyrics by")],
+            "artist": description[description.index("- song and lyrics by")+21:description.index(" | Spotify")]
         }
 
         query_encoded = urllib.parse.quote(song["title"]+" "+song["artist"])
@@ -66,10 +65,6 @@ def spotify_song_parser(url_list,directory=None):
 
         if directory != None:
             song["directory"]=directory
-
-        c+=1
-        p = 100*c/int(len(url_list))
-        print(str(p)+"%")
 
     return song_list
 
