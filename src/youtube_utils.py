@@ -113,9 +113,14 @@ def yt_getVideoInfo(video_links,directory=None):
 
 def yt_downloader(video_list):
 
+    DIRECTORY = ""
+
+    online_filenames = []
+
     if "directory" in video_list[0]:
         directory = video_list[0]["directory"]
         directory = clean_filename(directory)
+        DIRECTORY = directory
         if os.path.exists(Main.MUSIC_FOLDER + directory):
             print("Directory %s already exist" % directory)
         else:
@@ -130,6 +135,7 @@ def yt_downloader(video_list):
             filename = "{} by {}.mp3".format(video["title"],video["artist"])
 
         filename = clean_filename(filename)
+        online_filenames.append(filename)
 
         if "directory" in video:
             filename = Main.MUSIC_FOLDER + directory + "/" + filename
@@ -137,6 +143,7 @@ def yt_downloader(video_list):
             if not os.path.exists(Main.MUSIC_FOLDER + "/Downloader/"):
                 os.mkdir(Main.MUSIC_FOLDER + "/Downloader/")
             filename = Main.MUSIC_FOLDER + "/Downloader/" + filename
+
 
         if os.path.exists(filename):
             print("%s already exist" % filename)
@@ -163,4 +170,12 @@ def yt_downloader(video_list):
             ff.run()
             print("[Removing temporary file]")
             os.remove("temp.mp3")
+
+    if DIRECTORY != "":
+        local_filenames = os.listdir(Main.MUSIC_FOLDER + "/" + DIRECTORY + "/")
+        for filename in local_filenames:
+            if filename not in online_filenames:
+                print(filename,"has been deleted online, removing it...")
+                os.remove(Main.MUSIC_FOLDER+"/"+DIRECTORY+"/"+filename)
+
 

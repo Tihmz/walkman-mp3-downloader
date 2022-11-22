@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import spotify_utils
 import youtube_utils
 
