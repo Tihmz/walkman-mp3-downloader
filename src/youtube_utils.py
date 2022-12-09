@@ -1,4 +1,3 @@
-from os.path import isdir
 import requests
 import urllib.parse
 import urllib.request
@@ -27,7 +26,7 @@ def run(link):
     return download_list
 
 def clean_filename(inp):
-    regex = re.compile("[#<>%*&{}/\\\\$ +?!`\"\'|=@]")
+    regex = re.compile("[#<>%*&{}/\\\\$ +!`\"\'|=@]")
     filename = ""
     long_empty = False
     for i in inp:
@@ -173,15 +172,8 @@ def yt_downloader(video_list):
             os.remove("temp.mp3")
 
     if DIRECTORY != "":
-        local_filename = os.listdir(Main.MUSIC_FOLDER + "/" + DIRECTORY + "/")
-        for filename in local_filename:
-#            if os.path.isdir(Main.MUSIC_FOLDER + "/" + filename):
-#                print("[",filename,"]")
-#                sub_filenames = os.listdir(Main.MUSIC_FOLDER + "/" + filename + "/")
-#                for sfilename in sub_filenames:
-#                    print(filename)
-#            else:
-#               print(filename)
+        local_filenames = os.listdir(Main.MUSIC_FOLDER + "/" + DIRECTORY + "/")
+        for filename in local_filenames:
             if filename not in online_filenames:
                 print(filename,"has been deleted online, removing it...")
                 os.remove(Main.MUSIC_FOLDER+"/"+DIRECTORY+"/"+filename)
